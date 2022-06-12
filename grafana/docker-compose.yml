@@ -6,7 +6,7 @@ x-logging:
   options:
     loki-url: "http://192.168.55.20:3100/loki/api/v1/push"
     loki-batch-size: "400"
-    loki-retries: "3"
+    loki-retries: "2"
     loki-timeout: "3s"
 
 services:
@@ -93,7 +93,7 @@ services:
       - cassandra-node-3
       - cassandra-node-4
       - minio
-    # logging: *loki-logging
+    logging: *loki-logging
 
   cassandra:
     image: bitnami/cassandra:latest
@@ -107,7 +107,7 @@ services:
       - CASSANDRA_PASSWORD_SEEDER=yes
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
-    # logging: *loki-logging
+    logging: *loki-logging
 
   cassandra-node-1:
     image: bitnami/cassandra:latest
@@ -122,7 +122,7 @@ services:
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
-    # logging: *loki-logging
+    logging: *loki-logging
 
   cassandra-node-2:
     image: bitnami/cassandra:latest
@@ -137,7 +137,7 @@ services:
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
-    # logging: *loki-logging
+    logging: *loki-logging
 
   cassandra-node-3:
     image: bitnami/cassandra:latest
@@ -152,7 +152,7 @@ services:
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
-    # logging: *loki-logging
+    logging: *loki-logging
 
   cassandra-node-4:
     image: bitnami/cassandra:latest
@@ -167,7 +167,7 @@ services:
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
-    # logging: *loki-logging
+    logging: *loki-logging
 
   minio:
     image: minio/minio:${MINIO_VERSION:-latest}
@@ -190,7 +190,7 @@ services:
       - net-minio
     ports:
       - 9002:9002
-    # logging: *loki-logging
+    logging: *loki-logging
 
   watchtower:
     restart: unless-stopped
