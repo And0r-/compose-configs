@@ -97,7 +97,7 @@ services:
 
   cassandra:
     image: bitnami/cassandra:latest
-    # container_name: cassandra
+    container_name: cassandra
     restart: unless-stopped
     networks:
       - net-cassandra
