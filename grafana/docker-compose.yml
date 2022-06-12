@@ -115,6 +115,7 @@ services:
     volumes:
       - cassandra-data-node-1:/bitnami
     environment:
+      - CASSANDRA_PASSWORD_SEEDER=yes
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
@@ -129,6 +130,7 @@ services:
     volumes:
       - cassandra-data-node-2:/bitnami
     environment:
+      - CASSANDRA_PASSWORD_SEEDER=yes
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
@@ -143,6 +145,7 @@ services:
     volumes:
       - cassandra-data-node-3:/bitnami
     environment:
+      - CASSANDRA_PASSWORD_SEEDER=yes
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
@@ -157,6 +160,7 @@ services:
     volumes:
       - cassandra-data-node-4:/bitnami
     environment:
+      - CASSANDRA_PASSWORD_SEEDER=yes
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
