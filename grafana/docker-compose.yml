@@ -1,0 +1,235 @@
+version: "3.9"
+
+x-logging:
+  &loki-logging
+  driver: loki
+  options:
+    loki-url: "http://192.168.55.20:3100/loki/api/v1/push"
+
+services:
+  influxdb:
+    restart: unless-stopped
+    container_name: influxdb
+    image: influxdb:1.8
+    volumes:
+      - ./influxdb/etc:/etc/influxdb
+      - influxdb-lib-old:/var/lib/influxdb
+    ports:
+      - 8083:8083
+      - 8086:8086
+      - 8088:8088
+      - 8089:8089/udp
+    environment:
+      - INFLUXDB_DB=proxmox
+      - INFLUXDB_ADMIN_USER=${INFLUXDB_USERNAME}
+      - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_PASSWORD}
+    networks:
+      - net-influxdb
+    logging: *loki-logging
+
+  grafana:
+    restart: unless-stopped
+    container_name: grafana
+    image: grafana/grafana:latest
+    volumes:
+      #- ./grafana/etc:/etc/grafana:ro
+      - grafana-lib:/var/lib/grafana
+      - grafana-log:/var/log/grafana
+    links:
+      - influxdb:influxdb
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USERNAME}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel
+      - INFLUXDB_DB=proxmox
+      - INFLUXDB_ADMIN_USER=${INFLUXDB_USERNAME}
+      - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_PASSWORD}
+      - GF_SERVER_DOMAIN=monitor.iot-schweiz.ch
+      - GF_SERVER_ROOT_URL=https://monitor.iot-schweiz.ch
+      - GF_AUTH_GENERIC_OAUTH_ENABLED=true
+      - GF_AUTH_GENERIC_OAUTH_NAME=IOT Cyber Login
+      - GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP=true
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_ID=monitor.iot-schweiz.ch
+      - GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=MOImcfJmTB76yoMkdi5cZhSPYU508HR9
+      - GF_AUTH_GENERIC_OAUTH_SCOPES=profile
+      - GF_AUTH_GENERIC_OAUTH_AUTH_URL=https://keycloak.iot-schweiz.ch/auth/realms/IOT/protocol/openid-connect/auth
+      - GF_AUTH_GENERIC_OAUTH_TOKEN_URL=https://keycloak.iot-schweiz.ch/auth/realms/IOT/protocol/openid-connect/token
+      - GF_AUTH_GENERIC_OAUTH_API_URL=https://keycloak.iot-schweiz.ch/auth/realms/IOT/protocol/openid-connect/userinfo
+    ports:
+      - 3000:3000
+    depends_on:
+      - influxdb
+    networks:
+      - net-loki
+      - net-influxdb
+    logging: *loki-logging
+
+  loki:
+    image: grafana/loki:2.5.0
+    container_name: loki
+    command: -config.file=/mnt/config/loki-config-cassandra.yml -target=all,table-manager
+    # restart: unless-stopped
+    volumes:
+      - ./loki/config:/mnt/config
+      - loki-data3:/loki
+    environment:
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+    ports:
+      - 3100:3100
+    networks:
+      - net-cassandra
+      - net-loki
+      - net-minio
+    depends_on:
+      - cassandra
+      - cassandra-node-1
+      - cassandra-node-2
+      - cassandra-node-3
+      - cassandra-node-4
+      - minio
+    # logging: *loki-logging
+
+  cassandra:
+    image: bitnami/cassandra:latest
+    # container_name: cassandra
+    restart: unless-stopped
+    networks:
+      - net-cassandra
+    volumes:
+      - cassandra-data3:/bitnami
+    environment:
+      - CASSANDRA_PASSWORD_SEEDER=yes
+      - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+    # logging: *loki-logging
+
+  cassandra-node-1:
+    image: bitnami/cassandra:latest
+    container_name: cassandran1
+    # restart: unless-stopped
+    networks:
+      - net-cassandra
+    volumes:
+      - cassandra-data-node-1:/bitnami
+    environment:
+      - CASSANDRA_SEEDS=cassandra
+      - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+    # logging: *loki-logging
+
+  cassandra-node-2:
+    image: bitnami/cassandra:latest
+    container_name: cassandran2
+    # restart: unless-stopped
+    networks:
+      - net-cassandra
+    volumes:
+      - cassandra-data-node-2:/bitnami
+    environment:
+      - CASSANDRA_SEEDS=cassandra
+      - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+    # logging: *loki-logging
+
+  cassandra-node-3:
+    image: bitnami/cassandra:latest
+    container_name: cassandran3
+    # restart: unless-stopped
+    networks:
+      - net-cassandra
+    volumes:
+      - cassandra-data-node-3:/bitnami
+    environment:
+      - CASSANDRA_SEEDS=cassandra
+      - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+    # logging: *loki-logging
+
+  cassandra-node-4:
+    image: bitnami/cassandra:latest
+    container_name: cassandran4
+    # restart: unless-stopped
+    networks:
+      - net-cassandra
+    volumes:
+      - cassandra-data-node-4:/bitnami
+    environment:
+      - CASSANDRA_SEEDS=cassandra
+      - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+    # logging: *loki-logging
+
+  minio:
+    image: minio/minio:${MINIO_VERSION:-latest}
+    container_name: minio
+    volumes:
+      - minio-data-13:/data1
+      - minio-data-23:/data2
+      - minio-data-33:/data3
+      - minio-data-43:/data4
+    environment:
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+    command: server /data{1...4} --console-address ':9002'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - net-minio
+    ports:
+      - 9002:9002
+    # logging: *loki-logging
+
+  watchtower:
+    restart: unless-stopped
+    container_name: WatchTower
+    image: containrrr/watchtower
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - WATCHTOWER_ROLLING_RESTART=true
+      - WATCHTOWER_INCLUDE_STOPPED=true
+      - WATCHTOWER_NOTIFICATIONS=gotify
+      - "WATCHTOWER_NOTIFICATION_GOTIFY_URL=http://192.168.55.5:85"
+      - WATCHTOWER_NOTIFICATION_GOTIFY_TOKEN=${GOTIFY_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 21600
+    networks:
+      - net-watchtower
+    logging: *loki-logging
+
+  agent:
+    restart: unless-stopped
+    container_name: PortainerAgent
+    image: portainer/agent:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    ports:
+      - 9001:9001
+    networks:
+      - net-portainer
+    logging: *loki-logging
+
+volumes:
+  influxdb-lib-old:
+  grafana-lib:
+  grafana-log:
+  chronograf-storage:
+  loki-data3:
+  cassandra-data3:
+  minio-data-13:
+  minio-data-23:
+  minio-data-33:
+  minio-data-43:
+  cassandra-data-node-1:
+  cassandra-data-node-2:
+  cassandra-data-node-3:
+  cassandra-data-node-4:
+
+networks:
+  net-cassandra:
+  net-influxdb:
+  net-loki:
+  net-watchtower:
+  net-portainer:
+  net-minio:
