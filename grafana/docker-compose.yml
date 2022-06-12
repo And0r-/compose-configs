@@ -67,7 +67,7 @@ services:
   loki:
     image: grafana/loki:2.5.0
     container_name: loki
-    command: -config.file=/mnt/config/loki-config-cassandra.yml -target=all,table-manager
+    command: -config.file=/mnt/config/loki-config-cassandra.yml -target=all,table-manager -config.expand-env=true
     # restart: unless-stopped
     volumes:
       - ./loki/etc:/mnt/config
