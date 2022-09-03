@@ -276,6 +276,6 @@ networks:
   net-cassandra:
   net-influxdb:
   net-loki:
-  net-watchtower:
+  # net-watchtower:
   net-portainer:
   net-minio:
