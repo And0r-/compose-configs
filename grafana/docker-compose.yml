@@ -6,8 +6,8 @@ x-logging:
   options:
     loki-url: "http://192.168.55.20:3100/loki/api/v1/push"
     loki-batch-size: "400"
-    loki-retries: "2"
-    loki-timeout: "3s"
+    loki-retries: "7"
+    loki-timeout: "5s"
 
 services:
   influxdb:
@@ -71,7 +71,7 @@ services:
     image: grafana/loki:2.5.0
     container_name: loki
     command: -config.file=/mnt/config/loki-config-cassandra.yml -target=all,table-manager -config.expand-env=true
-    # restart: unless-stopped
+    restart: unless-stopped
     volumes:
       - ./loki/etc:/mnt/config
       - loki-data3:/loki
@@ -87,12 +87,18 @@ services:
       - net-loki
       - net-minio
     depends_on:
-      - cassandra
-      - cassandra-node-1
-      - cassandra-node-2
-      - cassandra-node-3
-      - cassandra-node-4
-      - minio
+      cassandra:
+        condition: service_healthy
+      cassandra-node-1:
+        condition: service_healthy
+      cassandra-node-2:
+        condition: service_healthy
+      cassandra-node-3:
+        condition: service_healthy
+      cassandra-node-4:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     logging: *loki-logging
 
   cassandra:
@@ -103,16 +109,22 @@ services:
       - net-cassandra
     volumes:
       - cassandra-data3:/bitnami
+      # - /cassandra/init-scripts:/docker-entrypoint-initdb.d
     environment:
       - CASSANDRA_PASSWORD_SEEDER=yes
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "cqlsh", "--username", "${CASSANDRA_USER}", "--password", "${CASSANDRA_PASSWORD}", "--keyspace", "loki" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
     logging: *loki-logging
 
   cassandra-node-1:
     image: bitnami/cassandra:latest
     container_name: cassandran1
-    # restart: unless-stopped
+    restart: unless-stopped
     networks:
       - net-cassandra
     volumes:
@@ -122,12 +134,17 @@ services:
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "cqlsh", "--username", "${CASSANDRA_USER}", "--password", "${CASSANDRA_PASSWORD}", "--keyspace", "loki" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
     logging: *loki-logging
 
   cassandra-node-2:
     image: bitnami/cassandra:latest
     container_name: cassandran2
-    # restart: unless-stopped
+    restart: unless-stopped
     networks:
       - net-cassandra
     volumes:
@@ -137,12 +154,17 @@ services:
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "cqlsh", "--username", "${CASSANDRA_USER}", "--password", "${CASSANDRA_PASSWORD}", "--keyspace", "loki" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
     logging: *loki-logging
 
   cassandra-node-3:
     image: bitnami/cassandra:latest
     container_name: cassandran3
-    # restart: unless-stopped
+    restart: unless-stopped
     networks:
       - net-cassandra
     volumes:
@@ -152,12 +174,17 @@ services:
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "cqlsh", "--username", "${CASSANDRA_USER}", "--password", "${CASSANDRA_PASSWORD}", "--keyspace", "loki" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
     logging: *loki-logging
 
   cassandra-node-4:
     image: bitnami/cassandra:latest
     container_name: cassandran4
-    # restart: unless-stopped
+    restart: unless-stopped
     networks:
       - net-cassandra
     volumes:
@@ -167,6 +194,11 @@ services:
       - CASSANDRA_SEEDS=cassandra
       - CASSANDRA_USER=${CASSANDRA_USER}
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
+    healthcheck:
+      test: [ "CMD", "cqlsh", "--username", "${CASSANDRA_USER}", "--password", "${CASSANDRA_PASSWORD}", "--keyspace", "loki" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
     logging: *loki-logging
 
   minio:
@@ -192,24 +224,24 @@ services:
       - 9002:9002
     logging: *loki-logging
 
-  watchtower:
-    restart: unless-stopped
-    container_name: WatchTower
-    image: containrrr/watchtower
-    environment:
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_INCLUDE_RESTARTING=true
-      - WATCHTOWER_ROLLING_RESTART=true
-      - WATCHTOWER_INCLUDE_STOPPED=true
-      - WATCHTOWER_NOTIFICATIONS=gotify
-      - "WATCHTOWER_NOTIFICATION_GOTIFY_URL=http://192.168.55.5:85"
-      - WATCHTOWER_NOTIFICATION_GOTIFY_TOKEN=${GOTIFY_TOKEN}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 21600
-    networks:
-      - net-watchtower
-    logging: *loki-logging
+  # watchtower:
+  #   restart: unless-stopped
+  #   container_name: WatchTower
+  #   image: containrrr/watchtower
+  #   environment:
+  #     - WATCHTOWER_CLEANUP=true
+  #     - WATCHTOWER_INCLUDE_RESTARTING=true
+  #     - WATCHTOWER_ROLLING_RESTART=true
+  #     - WATCHTOWER_INCLUDE_STOPPED=true
+  #     - WATCHTOWER_NOTIFICATIONS=gotify
+  #     - "WATCHTOWER_NOTIFICATION_GOTIFY_URL=http://192.168.55.5:85"
+  #     - WATCHTOWER_NOTIFICATION_GOTIFY_TOKEN=${GOTIFY_TOKEN}
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   command: --interval 21600
+  #   networks:
+  #     - net-watchtower
+  #   logging: *loki-logging
 
   agent:
     restart: unless-stopped
