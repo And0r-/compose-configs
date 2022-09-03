@@ -204,6 +204,7 @@ services:
   minio:
     image: minio/minio:${MINIO_VERSION:-latest}
     container_name: minio
+    restart: unless-stopped
     volumes:
       - minio-data-13:/data1
       - minio-data-23:/data2
