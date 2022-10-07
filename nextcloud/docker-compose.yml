@@ -101,8 +101,8 @@ services:
       - discovery.type=single-node
     ulimits:
       memlock:
-        soft: -1
-        hard: -1
+        soft: 4000000
+        hard: 4000000
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
