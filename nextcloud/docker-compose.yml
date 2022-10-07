@@ -99,10 +99,6 @@ services:
     restart: unless-stopped
     environment:
       - discovery.type=single-node
-    ulimits:
-      memlock:
-        soft: 4000000
-        hard: 4000000
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
