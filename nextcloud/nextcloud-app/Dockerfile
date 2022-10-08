@@ -6,5 +6,4 @@ RUN pecl install imagick; exit 0
 RUN docker-php-ext-enable imagick
 RUN rm -rf /var/lib/apt/lists/*
 
-RUN mkdir /var/www/html/data
-RUN chown www-data:www-data /var/www/html/data
+USER www-data

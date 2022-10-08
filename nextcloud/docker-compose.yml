@@ -70,7 +70,7 @@ services:
     user: "www-data:www-data"
     volumes:
       - ./app:/var/www/html
-      - /data:/var/www/html/data
+      - /data/nextcloud:/var/www/html/data
       # - ./imagemagick/policy.xml:/etc/ImageMagick-6/policy.xml
     # labels:
     #   - "traefik.enable=true"
