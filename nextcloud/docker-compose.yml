@@ -67,6 +67,7 @@ services:
         MAIL_DOMAIN: ${MAIL_DOMAIN}
         PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT}
         PHP_UPLOAD_LIMIT: ${PHP_UPLOAD_LIMIT}
+    user: "www-data:www-data"
     volumes:
       - ./app:/var/www/html
       - /data:/var/www/html/data
