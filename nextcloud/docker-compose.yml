@@ -67,10 +67,9 @@ services:
         MAIL_DOMAIN: ${MAIL_DOMAIN}
         PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT}
         PHP_UPLOAD_LIMIT: ${PHP_UPLOAD_LIMIT}
-    user: "www-data:www-data"
     volumes:
       - ./app:/var/www/html
-      - /data/nextcloud:/var/www/html/data
+      - /media/data/nextcloud:/var/www/html/data
       # - ./imagemagick/policy.xml:/etc/ImageMagick-6/policy.xml
     # labels:
     #   - "traefik.enable=true"
@@ -101,6 +100,10 @@ services:
     restart: unless-stopped
     environment:
       - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
