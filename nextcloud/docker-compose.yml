@@ -94,22 +94,6 @@ services:
       - 80:80
     logging: *loki-logging
 
-  elasticsearch:
-    build: ./elasticsearch
-    container_name: elasticsearch
-    restart: unless-stopped
-    environment:
-      - discovery.type=single-node
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data
-    networks:
-      - nextcloud
-    logging: *loki-logging
-
   # watchtower:
   #   restart: unless-stopped
   #   container_name: WatchTower
