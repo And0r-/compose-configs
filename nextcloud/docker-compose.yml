@@ -68,8 +68,8 @@ services:
         PHP_MEMORY_LIMIT: ${PHP_MEMORY_LIMIT}
         PHP_UPLOAD_LIMIT: ${PHP_UPLOAD_LIMIT}
     volumes:
-      - ./app:/var/www/html
-      - /media/data/nextcloud:/var/www/html/data
+      - nextcloud_app:/var/www/html
+      - /data/nextcloud:/var/www/html/data
       # - ./imagemagick/policy.xml:/etc/ImageMagick-6/policy.xml
     # labels:
     #   - "traefik.enable=true"
@@ -127,7 +127,7 @@ services:
 
 volumes:
   mariadb_data:
-  elasticsearch_data:
+  nextcloud_app:
 
 networks:
   nextcloud:
