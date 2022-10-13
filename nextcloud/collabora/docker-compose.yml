@@ -1,15 +1,27 @@
 version: '3.3'
+
+x-logging:
+  &loki-logging
+  driver: loki
+  options:
+    loki-url: "http://192.168.55.20:3100/loki/api/v1/push"
+    loki-batch-size: "400"
+    loki-retries: "7"
+    loki-timeout: "5s"
+
+
 services:
   collabora:
     image: collabora/code
     container_name: collabora_app
     cap_add:
       - MKNOD
-    expose:
-      - 9980
+    ports:
+      - 9980:9980
     environment:
       - domain=${COLLABORA_DOMAIN} #Gebt hier eure Nextcloud Domain an. Wenn ihr dies nicht nutzt, dann entfernt diese Zeile
       - username=${COLLABORA_USER}     #Nutzername eingeben
       - password=${COLLABORA_PASSWORD}         #Passwort eingeben
       - "extra_params=--o:ssl.enable=false --o:ssl.termination=true"
     restart: unless-stopped
+    logging: *loki-logging
