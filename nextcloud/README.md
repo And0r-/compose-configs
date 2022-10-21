@@ -43,7 +43,7 @@ docker exec --user www-data nextcloud-app php occ fulltextsearch:index
 docker exec --user www-data nextcloud-app php occ fulltextsearch:live
 
 # when needet
-docker exec --user www-data nextcloud-app php occ occ db:convert-filecache-bigint
+docker exec -it --user www-data nextcloud-app php occ db:convert-filecache-bigint
 
 
 
