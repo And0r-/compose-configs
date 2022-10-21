@@ -9,7 +9,7 @@ x-logging:
     loki-retries: "7"
     loki-timeout: "5s"
 
-
+services:
   oauth2-proxy-nextcloud:
     image: bitnami/oauth2-proxy:latest
     command:
