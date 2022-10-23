@@ -11,13 +11,11 @@ x-logging:
 
 
 services:
-  oauth2-proxy-nextcloud:
+  oauth2-proxy-archive:
     image: bitnami/oauth2-proxy:latest
     command:
       - --http-address
       - 0.0.0.0:4180
-      - --allowed-role
-      - test-oauth:trusted
     environment:
       OAUTH2_PROXY_UPSTREAMS: ${UPSTREAM}
       OAUTH2_PROXY_PROVIDER_DISPLAY_NAME: ${NAME}
@@ -33,24 +31,25 @@ services:
       OAUTH2_PROXY_COOKIE_NAME: SESSION
       OAUTH2_PROXY_COOKIE_SAMESITE: lax
       OAUTH2_PROXY_SESSION_STORE_TYPE: redis
-      OAUTH2_PROXY_REDIS_CONNECTION_URL: redis://proxy-nextcloud-redis
+      OAUTH2_PROXY_REDIS_CONNECTION_URL: redis://proxy-archive-redis
       OAUTH2_PROXY_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      OAUTH2_PROXY_ALLOWED_ROLES: ${OAUTH2_PROXY_ALLOWED_ROLES}
       OAUTH2_PROXY_COOKIE_REFRESH: 10s
     ports:
       - 4180:4180
     depends_on:
-      - proxy-nextcloud-redis
+      - proxy-archive-redis
     networks:
-      - nextcloud-proxy
+      - archive-proxy
     logging: *loki-logging
 
 
-  proxy-nextcloud-redis:
+  proxy-archive-redis:
     image: redis:latest
-    container_name: proxy-nextcloud-redis
-    hostname: proxy-nextcloud-redis
+    container_name: proxy-archive-redis
+    hostname: proxy-archive-redis
     networks:
-      - nextcloud-proxy
+      - archive-proxy
     restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD}
     volumes:
@@ -75,6 +74,6 @@ volumes:
   cache:
 
 networks:
-  nextcloud-proxy:
+  archive-proxy:
   net-portainer:
 
