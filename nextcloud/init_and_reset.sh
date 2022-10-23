@@ -8,6 +8,10 @@ service docker start
 # remove docker volumes and shut down
 docker-compose down -v
 
+# Install loki driver
+docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+
+
 # /data is a mounted disk we have to use it in the container.
 rm -r /data/nextcloud
 mkdir /data/nextcloud
