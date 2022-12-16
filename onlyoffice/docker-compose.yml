@@ -1,0 +1,136 @@
+version: '2.1'
+
+x-ds-image:
+  &ds-image
+  ${COMPANY_NAME:-onlyoffice}/${PRODUCT_NAME:-documentserver-de}:${PRODUCT_VERSION:-latest}
+
+x-logging:
+  &loki-logging
+  driver: loki
+  options:
+    loki-url: "http://192.168.55.20:3100/loki/api/v1/push"
+    loki-batch-size: "400"
+    loki-retries: "7"
+    loki-timeout: "5s"
+
+services:
+  onlyoffice-documentserver-data:  
+    container_name: onlyoffice-documentserver-data
+    image: *ds-image
+    environment:
+      - ONLYOFFICE_DATA_CONTAINER=true
+      - DB_HOST=onlyoffice-postgresql
+      - DB_PORT=5432
+      - DB_NAME=onlyoffice
+      - DB_USER=onlyoffice
+      - AMQP_URI=amqp://guest:guest@onlyoffice-rabbitmq
+      - REDIS_SERVER_HOST=onlyoffice-redis
+      - REDIS_SERVER_PORT=6379
+      # Uncomment strings below to enable the JSON Web Token validation.
+      #- JWT_ENABLED=true
+      #- JWT_SECRET=secret
+      #- JWT_HEADER=Authorization
+      #- JWT_IN_BODY=true
+    stdin_open: true
+    restart: unless-stopped
+    logging: *loki-logging
+    volumes:
+       - /etc/onlyoffice
+       - /var/www/onlyoffice/Data
+       - /var/log/onlyoffice
+       - /var/lib/onlyoffice/documentserver/App_Data/cache/files
+       - /var/www/onlyoffice/documentserver-example/public/files
+       - /usr/share/fonts
+       
+  onlyoffice-documentserver:
+    image: *ds-image
+    depends_on:
+      - onlyoffice-documentserver-data
+      - onlyoffice-postgresql
+      - onlyoffice-redis
+      - onlyoffice-rabbitmq
+    environment:
+      - ONLYOFFICE_DATA_CONTAINER_HOST=onlyoffice-documentserver-data
+      - BALANCE=uri depth 3
+      - EXCLUDE_PORTS=443
+      - HTTP_CHECK=GET /healthcheck
+      - EXTRA_SETTINGS=http-check expect string true
+      # Uncomment the string below to redirect HTTP request to HTTPS request.
+      #- FORCE_SSL=true
+    stdin_open: true
+    restart: unless-stopped
+    logging: *loki-logging
+    expose:
+      - '80'
+    volumes_from:
+     - onlyoffice-documentserver-data
+
+  onlyoffice-haproxy:
+    container_name: onlyoffice-haproxy
+    image: dockercloud/haproxy
+    depends_on:
+      - onlyoffice-documentserver
+    environment:
+      - MODE=http
+      # Uncomment the string below to specify the path of ssl certificates
+      #- CERT_FOLDER=/certs/
+    stdin_open: true
+    links:
+     - onlyoffice-documentserver
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Uncomment the string below to map a ssl certificate from host
+      # to the proxy container
+      #- /app/onlyoffice/DocumentServer/data/certs/onlyoffice.pem:/certs/cert1.pem
+    restart: unless-stopped
+    logging: *loki-logging
+    ports:
+      - '80:80'
+      - '443:443'
+      - '1936:1936'
+       
+  onlyoffice-redis:
+    container_name: onlyoffice-redis
+    image: redis
+    restart: unless-stopped
+    logging: *loki-logging
+    expose:
+      - '6379'
+
+  onlyoffice-rabbitmq:
+    container_name: onlyoffice-rabbitmq
+    image: rabbitmq
+    restart: unless-stopped
+    logging: *loki-logging
+    expose:
+      - '5672'
+
+  onlyoffice-postgresql:
+    container_name: onlyoffice-postgresql
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=onlyoffice
+      - POSTGRES_USER=onlyoffice
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    restart: unless-stopped
+    logging: *loki-logging
+    expose:
+      - '5432'
+    volumes:
+      - postgresql_data:/var/lib/postgresql
+
+  agent:
+    restart: unless-stopped
+    container_name: PortainerAgent
+    image: portainer/agent:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    ports:
+      - 9001:9001
+    networks:
+      - net-portainer
+    logging: *loki-logging
+
+volumes:
+  postgresql_data:
